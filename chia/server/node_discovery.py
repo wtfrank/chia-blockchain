@@ -70,8 +70,11 @@ class FullNodeDiscovery:
         self.serialize_task: Optional[asyncio.Task] = None
         self.cleanup_task: Optional[asyncio.Task] = None
         self.initial_wait: int = 0
-        self.resolver = dns.asyncresolver.Resolver()
-        self.pending_outbound_connections: Set[str] = set()
+        try:
+            self.resolver = dns.asyncresolver.Resolver()
+        except Exception as e:
+            self.resolver = None
+        self.pending_outbound_connections: Set = set()
         self.pending_tasks: Set[asyncio.Task] = set()
 
     async def initialize_address_manager(self) -> None:
