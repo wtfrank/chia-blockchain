@@ -1,12 +1,11 @@
 from clvm_tools import binutils
 
-from chia.wallet.puzzles.load_clvm import load_clvm
 from chia.types.blockchain_format.program import Program, INFINITE_COST
 from chia.types.announcement import Announcement
 from chia.types.blockchain_format.coin import Coin
 from chia.types.blockchain_format.sized_bytes import bytes32
 from chia.util.condition_tools import parse_sexp_to_conditions
-from chia.wallet.cc_wallet.debug_spend_bundle import debug_spend_bundle
+# from chia.wallet.cc_wallet.debug_spend_bundle import debug_spend_bundle
 from chia.wallet.puzzles.load_clvm import load_clvm
 
 
@@ -19,7 +18,6 @@ POOL_ESCAPING_MOD = load_clvm("pool_escaping_innerpuz.clvm")
 LAUNCHER_ID = bytes32(Program.to(b"launcher-id").get_tree_hash())
 LAUNCHER_PUZZLE_HASH = SINGLETON_LAUNCHER_MOD.get_tree_hash()
 SINGLETON_MOD_HASH = SINGLETON_MOD.get_tree_hash()
-
 POOL_REWARD_PREFIX_MAINNET = bytes32.fromhex("ccd5bb71183532bff220ba46c268991a00000000000000000000000000000000")
 
 
