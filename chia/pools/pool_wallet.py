@@ -537,8 +537,8 @@ class PoolWallet:
     async def generate_launcher_spend(
             genesis_challenge,
             standard_wallet: Wallet,
-        amount: uint64,
-        initial_target_state: PoolState,
+            amount: uint64,
+            initial_target_state: PoolState,
     ) -> Tuple[SpendBundle, bytes32]:
         """
         Creates the initial singleton, which includes spending an origin coin, the launcher, and creating a singleton
