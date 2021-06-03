@@ -14,7 +14,6 @@ from chia.pools.pool_puzzles import (
     create_escaping_inner_puzzle,
     create_pooling_inner_puzzle,
     uncurry_pool_member_inner_puzzle,
-    POOL_REWARD_PREFIX_MAINNET,
     pool_state_to_inner_puzzle,
     is_pool_member_inner_puzzle,
     is_pool_escaping_inner_puzzle,
@@ -22,7 +21,7 @@ from chia.pools.pool_puzzles import (
     solution_to_extra_data,
 )
 from chia.util.ints import uint32, uint64
-from tests.wallet.test_singleton import LAUNCHER_PUZZLE_HASH, LAUNCHER_ID, singleton_puzzle, p2_singleton_puzzle, P2_SINGLETON_MOD
+from tests.wallet.test_singleton import LAUNCHER_PUZZLE_HASH, LAUNCHER_ID, singleton_puzzle, p2_singleton_puzzle
 
 
 def test_p2_singleton():

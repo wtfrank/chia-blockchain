@@ -90,6 +90,15 @@ def create_escape_spend(
     #    -> Tuple[CoinSolution, bytes32]:
     inner_puzzle: Program = pool_state_to_inner_puzzle(pool_info.current, genesis_challenge)
 
+<<<<<<< HEAD
+=======
+# This spend will use the escape-type spend path for whichever state you are currently if in
+# If you are currently an escaping innerpuzzle, then it will look at your target_state to determine the next innerpuzzlehash to go to
+def create_escape_spend(genesis_challenge: bytes32, last_coin_solution: CoinSolution, launcher_coin: Coin, current: PoolState, target: PoolState) -> Tuple[CoinSolution, Program, Program]:
+    #    -> Tuple[CoinSolution, bytes32]:
+    pool_reward_prefix = bytes32(genesis_challenge[:16] + b"\x00" * 16)
+    inner_puzzle: Program = pool_state_to_inner_puzzle(pool_reward_prefix, current)
+>>>>>>> added clarifying comments
     if is_pool_member_inner_puzzle(inner_puzzle):
         # inner sol is (spend_type, pool_reward_amount, pool_reward_height, extra_data)
         inner_sol: Program = Program.to([1, 0, 0, bytes(pool_info.current)])
