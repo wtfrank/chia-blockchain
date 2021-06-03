@@ -586,6 +586,7 @@ class WalletStateManager:
                     if not already_have:
                         self.log.info("Found created launcher. Creating pool wallet")
                         pool_wallet = await PoolWallet.create(
+                            #self.constants.GENESIS_CHALLENGE,
                             self, self.main_wallet, cs.coin.name(), additional_coin_spends, height, True, "pool_wallet"
                         )
                         created_pool_wallet_ids.append(pool_wallet.wallet_id)

@@ -294,6 +294,15 @@ class MempoolManager:
         for name in removal_names:
             removal_record = await self.coin_store.get_coin_record(name)
             if removal_record is None and name not in additions_dict:
+                from chia.wallet.cc_wallet.debug_spend_bundle import debug_spend_bundle
+                print("*******************************")
+                #log = logging.getLogger(__name__)
+                log.warning(name)
+                debug_spend_bundle(new_spend)
+                # constants.GENESIS_CHALLENGE
+                print("*******************************")
+
+                breakpoint()
                 return None, MempoolInclusionStatus.FAILED, Err.UNKNOWN_UNSPENT
             elif name in additions_dict:
                 removal_coin = additions_dict[name]

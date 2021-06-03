@@ -46,10 +46,19 @@ from chia.wallet.wallet_info import WalletInfo
 from chia.wallet.util.transaction_type import TransactionType
 
 
+def get_genesis_challenge():
+    # TODO: load GENESIS_CHALLENGE from config
+    #from chia.util.block_tools import test_constants
+    #return test_constants.GENESIS_CHALLENGE
+    from chia.consensus.default_constants import DEFAULT_CONSTANTS
+    return DEFAULT_CONSTANTS.GENESIS_CHALLENGE
+
+
 class PoolWallet:
     MINIMUM_INITIAL_BALANCE = 1
     MINIMUM_RELATIVE_LOCK_HEIGHT = 10
 
+    genesis_challenge: bytes32
     wallet_state_manager: Any
     log: logging.Logger
     wallet_info: WalletInfo
@@ -186,7 +195,7 @@ class PoolWallet:
             extra_data = solution_to_extra_data(full_spend)
 
         assert extra_data is not None
-        current_inner = pool_state_to_inner_puzzle(extra_data)
+        current_inner = pool_state_to_inner_puzzle(self.genesis_challenge, extra_data)
         launcher_id: bytes32 = launcher_coin.name()
         p2_singleton_puzzle_hash = launcher_id_to_p2_puzzle_hash(launcher_id)
         return PoolWalletInfo(
@@ -330,6 +339,7 @@ class PoolWallet:
 
     @staticmethod
     async def create(
+        # genesis_challenge: bytes32,
         wallet_state_manager: Any,
         wallet: Wallet,
         launcher_coin_id: bytes32,
@@ -343,6 +353,10 @@ class PoolWallet:
         this method.
         """
         self = PoolWallet()
+        self.genesis_challenge = get_genesis_challenge()
+        log = logging.getLogger(__name__)
+        log.warning(f"        PoolWallet.create(genesis_challenge={self.genesis_challenge.hex()})")
+
         self.wallet_state_manager = wallet_state_manager
 
         self.wallet_info = await wallet_state_manager.user_store.create_wallet(
@@ -392,6 +406,7 @@ class PoolWallet:
 
     @staticmethod
     async def create_new_pool_wallet_transaction(
+        # genesis_challenge: bytes32,
         wallet_state_manager: Any,
         main_wallet: Wallet,
         initial_target_state: PoolState,
@@ -422,7 +437,11 @@ class PoolWallet:
         # Verify Parameters - raise if invalid
         PoolWallet._verify_initial_target_state(initial_target_state)
 
+        log = logging.getLogger(__name__)
+        log.warning(f"        PoolWallet.create_new_pool_wallet_transaction(genesis_challenge={get_genesis_challenge().hex()})")
+
         spend_bundle, singleton_puzzle_hash = await PoolWallet.generate_launcher_spend(
+            get_genesis_challenge(),
             standard_wallet, uint64(1), initial_target_state
         )
 
@@ -454,7 +473,7 @@ class PoolWallet:
         pool_wallet_state: PoolWalletInfo = await self.get_current_state()
         spend_history = await self.get_spend_history()
         last_coin_solution: CoinSolution = spend_history[-1][1]
-        member_coin_solution, full_puzzle, inner_puzzle = create_member_spend(last_coin_solution, pool_wallet_state)
+        member_coin_solution, full_puzzle, inner_puzzle = create_member_spend(self.genesis_challenge, last_coin_solution, pool_wallet_state.launcher_coin, pool_wallet_state.current, pool_wallet_state.target)
         puzzle_hash = full_puzzle.get_tree_hash()
         (
             inner_f,
@@ -465,7 +484,22 @@ class PoolWallet:
             escape_puzzlehash,
         ) = uncurry_pool_member_inner_puzzle(inner_puzzle)
         spend_bundle: SpendBundle = SpendBundle([member_coin_solution], AugSchemeMPL.aggregate([]))
-        return spend_bundle, puzzle_hash
+        self.log.warning(f"generate_member_spend: calling create_member_spend({last_coin_solution})")
+        member_coin_solution, full_puzzle, inner_puzzle = create_member_spend(self.genesis_challenge, last_coin_solution, pool_wallet_state.launcher_coin, pool_wallet_state.    current, pool_wallet_state.target)
+        # last_sol_puz = Program.from_bytes(last_coin_solution.puzzle_reveal).run(last_coin_solution.solution)
+        # assert Coin(last_coin_solution.coin.name(), old_puzzle, 1)  == member_coin_solution.coin.name()
+        self.log.warning(f"member_coin_sol: {member_coin_solution}")
+        full_puzzle_hash = full_puzzle.get_tree_hash()
+        current_singleton = Coin(last_coin_solution.coin.name(), full_puzzle_hash, 1)
+        x = await self.get_spend_history()
+        self.log.warning(f"spend hist: {x}")
+        # breakpoint()
+        inner_f, target_puzzle_hash, p2_singleton_hash, owner_pubkey, pool_reward_prefix, escape_puzzlehash = uncurry_pool_member_inner_puzzle(inner_puzzle)
+        spend_bundle: SpendBundle = SpendBundle([member_coin_solution], AugSchemeMPL.aggregate([]))
+        last_singleton: Coin = get_most_recent_singleton_coin_from_coin_solution(last_coin_solution)
+        removals_coin = spend_bundle.removals()[0]
+        assert removals_coin == last_singleton
+        return spend_bundle, full_puzzle_hash
 
     async def generate_member_transaction(self, target_state: PoolState) -> TransactionRecord:
         singleton_amount = uint64(1)
@@ -501,7 +535,8 @@ class PoolWallet:
 
     @staticmethod
     async def generate_launcher_spend(
-        standard_wallet: Wallet,
+            genesis_challenge,
+            standard_wallet: Wallet,
         amount: uint64,
         initial_target_state: PoolState,
     ) -> Tuple[SpendBundle, bytes32]:
@@ -510,6 +545,7 @@ class PoolWallet:
         with the "pooling" inner state, which can be either self pooling or using a pool
         """
 
+        log = logging.getLogger(__name__)
         coins: Set[Coin] = await standard_wallet.select_coins(amount)
         if coins is None:
             raise ValueError("Not enough coins to create pool wallet")
@@ -528,6 +564,7 @@ class PoolWallet:
 
         # inner always starts in "member" state; either self or pooled
         self_pooling_inner_puzzle: Program = create_pooling_inner_puzzle(
+            genesis_challenge,
             initial_target_state.target_puzzle_hash, escaping_inner_puzzle_hash, initial_target_state.owner_pubkey
         )
         full_pooling_puzzle: Program = create_full_puzzle(self_pooling_inner_puzzle, launcher_id=launcher_coin.name())
@@ -559,6 +596,10 @@ class PoolWallet:
             SerializedProgram.from_program(genesis_launcher_solution),
         )
         launcher_sb: SpendBundle = SpendBundle([launcher_cs], AugSchemeMPL.aggregate([]))
+
+        eve = launcher_cs.additions()[0]
+        log.warning(f"launcher_coin={launcher_coin} launcher_coin_id={launcher_coin.name()}")
+        log.warning(f"eve singleton={eve} eve_coin_id={eve.name()}")
 
         # Current inner will be updated when state is verified on the blockchain
         full_spend: SpendBundle = SpendBundle.aggregate([create_launcher_tx_record.spend_bundle, launcher_sb])

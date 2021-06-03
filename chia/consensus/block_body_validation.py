@@ -385,6 +385,7 @@ async def validate_block_body(
                     # This coin is not in the current heaviest chain, so it must be in the fork
                     if rem not in additions_since_fork:
                         # Check for spending a coin that does not exist in this fork
+                        breakpoint()
                         return Err.UNKNOWN_UNSPENT, None
                     new_coin, confirmed_height, confirmed_timestamp = additions_since_fork[rem]
                     new_coin_record: CoinRecord = CoinRecord(
