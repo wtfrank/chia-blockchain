@@ -33,7 +33,7 @@ from chia.pools.pool_puzzles import (
     pool_state_to_inner_puzzle,
     get_most_recent_singleton_coin_from_coin_solution,
     launcher_id_to_p2_puzzle_hash,
-    create_member_spend,
+    create_travel_spend,
     uncurry_pool_member_inner_puzzle,
     create_absorb_spend,
 )
@@ -448,14 +448,16 @@ class PoolWallet:
         await standard_wallet.push_transaction(standard_wallet_record)
         return standard_wallet_record
 
-    async def generate_member_spend(self) -> Tuple[SpendBundle, bytes32]:
+    async def generate_travel_spend(self) -> Tuple[SpendBundle, bytes32]:
         # target_state is contained within pool_wallet_state
         pool_wallet_state: PoolWalletInfo = await self.get_current_state()
         spend_history = await self.get_spend_history()
         last_coin_solution: CoinSolution = spend_history[-1][1]
-        member_coin_solution, full_puzzle, inner_puzzle = create_member_spend(
+
+        member_coin_solution, full_puzzle, inner_puzzle = create_travel_spend(
             last_coin_solution, pool_wallet_state, self.wallet_state_manager.constants.GENESIS_CHALLENGE
         )
+
         puzzle_hash = full_puzzle.get_tree_hash()
         (
             inner_f,
@@ -466,7 +468,7 @@ class PoolWallet:
             escape_puzzlehash,
         ) = uncurry_pool_member_inner_puzzle(inner_puzzle)
         spend_bundle: SpendBundle = SpendBundle([member_coin_solution], AugSchemeMPL.aggregate([]))
-        return spend_bundle, puzzle_hash
+        return spend_bundle
 
     async def generate_member_transaction(self, target_state: PoolState) -> TransactionRecord:
         singleton_amount = uint64(1)
@@ -525,7 +527,6 @@ class PoolWallet:
             initial_target_state.owner_pubkey,
         ).get_tree_hash()
 
-        # inner always starts in "member" state; either self or pooled
         self_pooling_inner_puzzle: Program = create_pooling_inner_puzzle(
             initial_target_state.target_puzzle_hash,
             escaping_inner_puzzle_hash,
