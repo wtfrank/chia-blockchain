@@ -103,7 +103,6 @@ def is_pool_member_inner_puzzle(puzzle: Program) -> bool:
 def create_escape_spend(
     last_coin_solution: CoinSolution, pool_info: PoolWalletInfo, genesis_challenge: bytes32
 ) -> Tuple[CoinSolution, Program, Program]:
-
     inner_puzzle: Program = pool_state_to_inner_puzzle(pool_info.current, pool_info.launcher_id, genesis_challenge)
 
     if is_pool_member_inner_puzzle(inner_puzzle):
