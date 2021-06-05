@@ -64,7 +64,7 @@ class PoolWallet:
     wallet_info: WalletInfo
     target_state: Optional[PoolState]
     standard_wallet: Wallet
-    wallet_id: int
+    wallet_id: uint32
     """
     From the user's perspective, this is not a wallet at all, but a way to control
     whether their pooling-enabled plots are being self-farmed, or farmed by a pool,
@@ -186,7 +186,10 @@ class PoolWallet:
         assert len(all_spends) >= 1
 
         launcher_coin: Coin = all_spends[0].coin
-        tip_singleton_coin_id: bytes32 = get_most_recent_singleton_coin_from_coin_solution(all_spends[-1]).name()
+        latest_singleton = get_most_recent_singleton_coin_from_coin_solution(all_spends[-1])
+        if latest_singleton is None:
+            raise AssertionError("Internal Error: could not get last Singleton state")
+        tip_singleton_coin_id: bytes32 = latest_singleton.name()
 
         curr_spend_i = len(all_spends) - 1
         extra_data: Optional[PoolState] = None
@@ -361,7 +364,7 @@ class PoolWallet:
         self.wallet_state_manager = wallet_state_manager
         log = logging.getLogger(__name__)
         log.error(
-            f"        PoolWallet.create(genesis_challenge={self.wallet_state_manager.constants.GENESIS_CHALLENGE.hex()})"
+            f"    PoolWallet.create(genesis_challenge={self.wallet_state_manager.constants.GENESIS_CHALLENGE.hex()})"
         )
 
         self.wallet_info = await wallet_state_manager.user_store.create_wallet(
@@ -473,7 +476,7 @@ class PoolWallet:
         assert owner_sk is not None
         return owner_sk
 
-    async def sign_travel_spend_waitingroom_state(
+    async def sign_travel_spend_in_waitingroom_state(
         self, target_puzzle_hash, owner_pubkey: bytes32, coin_solution: CoinSolution, target: PoolState
     ) -> SpendBundle:
         private = await self.get_pool_wallet_sk()
@@ -535,7 +538,7 @@ class PoolWallet:
                 target_puzzle_hash, owner_pubkey, outgoing_coin_solution, pool_wallet_state.target
             )
         else:
-            raise
+            raise AssertionError("generate_travel_spend: Invalid inner puzzle from create_travel_spend")
 
         assert signed_spend_bundle is not None
         return signed_spend_bundle, puzzle_hash
