@@ -42,8 +42,11 @@ from chia.pools.pool_puzzles import (
 )
 
 from chia.util.ints import uint8, uint32, uint64
-from chia.wallet.derive_keys import find_owner_sk, master_sk_to_pooling_authentication_sk, \
-    master_sk_to_singleton_owner_sk
+from chia.wallet.derive_keys import (
+    find_owner_sk,
+    master_sk_to_pooling_authentication_sk,
+    master_sk_to_singleton_owner_sk,
+)
 from chia.wallet.transaction_record import TransactionRecord
 from chia.wallet.util.wallet_types import WalletType
 from chia.wallet.wallet import Wallet
@@ -357,7 +360,9 @@ class PoolWallet:
         self = PoolWallet()
         self.wallet_state_manager = wallet_state_manager
         log = logging.getLogger(__name__)
-        log.error(f"        PoolWallet.create(genesis_challenge={self.wallet_state_manager.constants.GENESIS_CHALLENGE.hex()})")
+        log.error(
+            f"        PoolWallet.create(genesis_challenge={self.wallet_state_manager.constants.GENESIS_CHALLENGE.hex()})"
+        )
 
         self.wallet_info = await wallet_state_manager.user_store.create_wallet(
             "Pool wallet", WalletType.POOLING_WALLET.value, "", in_transaction=in_transaction
@@ -464,13 +469,13 @@ class PoolWallet:
         return standard_wallet_record
 
     async def get_pool_wallet_sk(self):
-        owner_sk: PrivateKey = master_sk_to_singleton_owner_sk(
-            self.wallet_state_manager.private_key, self.wallet_id
-        )
+        owner_sk: PrivateKey = master_sk_to_singleton_owner_sk(self.wallet_state_manager.private_key, self.wallet_id)
         assert owner_sk is not None
         return owner_sk
 
-    async def sign_travel_spend_waitingroom_state(self, target_puzzle_hash, owner_pubkey: bytes32, coin_solution: CoinSolution, target: PoolState) -> SpendBundle:
+    async def sign_travel_spend_waitingroom_state(
+        self, target_puzzle_hash, owner_pubkey: bytes32, coin_solution: CoinSolution, target: PoolState
+    ) -> SpendBundle:
         private = await self.get_pool_wallet_sk()
         message = Program.to([target_puzzle_hash, coin_solution.coin.amount, bytes(target)]).get_tree_hash()
         sigs = [AugSchemeMPL.sign(private, message)]
@@ -479,7 +484,9 @@ class PoolWallet:
         signed_sb = SpendBundle([coin_solution], aggsig)
         return signed_sb
 
-    async def sign_travel_spend_in_member_state(self, owner_pubkey: bytes32, coin_solution: CoinSolution, target: PoolState) -> SpendBundle:
+    async def sign_travel_spend_in_member_state(
+        self, owner_pubkey: bytes32, coin_solution: CoinSolution, target: PoolState
+    ) -> SpendBundle:
         private = await self.get_pool_wallet_sk()
         message = Program.to(bytes(target)).get_tree_hash()
         sigs = [AugSchemeMPL.sign(private, message)]
@@ -511,15 +518,22 @@ class PoolWallet:
             pk_bytes = bytes(pubkey_as_program.as_atom())
             assert len(pk_bytes) == 48
             owner_pubkey = G1Element.from_bytes(pk_bytes)
-            signed_spend_bundle = await self.sign_travel_spend_in_member_state(owner_pubkey, outgoing_coin_solution, pool_wallet_state.target)
+            signed_spend_bundle = await self.sign_travel_spend_in_member_state(
+                owner_pubkey, outgoing_coin_solution, pool_wallet_state.target
+            )
         elif is_pool_waitingroom_inner_puzzle(inner_puzzle):
             (
-                target_puzzle_hash, relative_lock_height, owner_pubkey, p2_singleton_hash
+                target_puzzle_hash,
+                relative_lock_height,
+                owner_pubkey,
+                p2_singleton_hash,
             ) = uncurry_pool_waitingroom_inner_puzzle(inner_puzzle)
             pk_bytes = bytes(owner_pubkey.as_atom())
             assert len(pk_bytes) == 48
             owner_pubkey = G1Element.from_bytes(pk_bytes)
-            signed_spend_bundle = await self.sign_travel_spend_in_waitingroom_state(target_puzzle_hash, owner_pubkey, outgoing_coin_solution, pool_wallet_state.target)
+            signed_spend_bundle = await self.sign_travel_spend_in_waitingroom_state(
+                target_puzzle_hash, owner_pubkey, outgoing_coin_solution, pool_wallet_state.target
+            )
         else:
             raise
 
