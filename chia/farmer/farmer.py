@@ -32,7 +32,6 @@ from chia.wallet.derive_keys import (
     find_authentication_sk,
 )
 from chia.wallet.puzzles.load_clvm import load_clvm
-from tests.wallet.test_singleton import P2_SINGLETON_MOD
 
 SINGLETON_MOD = load_clvm("singleton_top_layer.clvm")
 P2_SINGLETON_MOD = load_clvm("p2_singleton.clvm")
