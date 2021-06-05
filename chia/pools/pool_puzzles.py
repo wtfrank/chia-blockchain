@@ -51,7 +51,7 @@ def create_pooling_inner_puzzle(
     p2_singleton_puzzle_hash: bytes32 = launcher_id_to_p2_puzzle_hash(launcher_id)
     return POOL_MEMBER_MOD.curry(
         target_puzzle_hash,
-        p2_singleton_puzzle_hash(launcher_id),
+        p2_singleton_puzzle_hash,
         bytes(owner_pubkey),
         pool_reward_prefix,
         pool_waiting_room_inner_hash,
@@ -100,7 +100,7 @@ def is_pool_member_inner_puzzle(puzzle: Program) -> bool:
 
 # This spend will use the escape-type spend path for whichever state you are currently if in
 # If you are currently an escaping innerpuzzle, then it will look at your target_state to determine the next innerpuzzlehash to go to
-def create_escape_spend(
+def create_travel_spend(
     last_coin_solution: CoinSolution, pool_info: PoolWalletInfo, genesis_challenge: bytes32
 ) -> Tuple[CoinSolution, Program, Program]:
     inner_puzzle: Program = pool_state_to_inner_puzzle(pool_info.current, pool_info.launcher_id, genesis_challenge)
