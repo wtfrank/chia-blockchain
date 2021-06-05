@@ -470,7 +470,7 @@ class PoolWallet:
         assert owner_sk is not None
         return owner_sk
 
-    async def sign_travel_spend_waitingroom_state(self, target_puzzle_hash, owner_pubkey, coin_solution, target):
+    async def sign_travel_spend_waitingroom_state(self, target_puzzle_hash, owner_pubkey: bytes32, coin_solution: CoinSolution, target: PoolState) -> SpendBundle:
         private = await self.get_pool_wallet_sk()
         message = Program.to([target_puzzle_hash, coin_solution.coin.amount, bytes(target)]).get_tree_hash()
         sigs = [AugSchemeMPL.sign(private, message)]
@@ -479,7 +479,7 @@ class PoolWallet:
         signed_sb = SpendBundle([coin_solution], aggsig)
         return signed_sb
 
-    async def sign_travel_spend_in_member_state(self, owner_pubkey, coin_solution, target):
+    async def sign_travel_spend_in_member_state(self, owner_pubkey: bytes32, coin_solution: CoinSolution, target: PoolState) -> SpendBundle:
         private = await self.get_pool_wallet_sk()
         message = Program.to(bytes(target)).get_tree_hash()
         sigs = [AugSchemeMPL.sign(private, message)]
@@ -511,7 +511,7 @@ class PoolWallet:
             pk_bytes = bytes(pubkey_as_program.as_atom())
             assert len(pk_bytes) == 48
             owner_pubkey = G1Element.from_bytes(pk_bytes)
-            signed_spend_bundle = await self.sign_travel_spend_in_member_state(target_puzzle_hash, owner_pubkey, outgoing_coin_solution, pool_wallet_state.target)
+            signed_spend_bundle = await self.sign_travel_spend_in_member_state(owner_pubkey, outgoing_coin_solution, pool_wallet_state.target)
         elif is_pool_waitingroom_inner_puzzle(inner_puzzle):
             (
                 target_puzzle_hash, relative_lock_height, owner_pubkey, p2_singleton_hash
